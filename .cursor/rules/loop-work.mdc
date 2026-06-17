@@ -1,0 +1,12 @@
+---
+description: Phase 2 des Build-Loops – den bestätigten Plan Schritt für Schritt umsetzen, inkl. Tests. Aufrufen mit @loop-work, nachdem ein Plan bestätigt wurde.
+alwaysApply: false
+---
+
+# Loop – Phase 2: Arbeiten
+
+1. Arbeite den zuvor bestätigten Plan Schritt für Schritt ab, nicht alles auf einmal.
+2. Schreibe zu jedem Feature direkt passende Tests, nicht nachträglich.
+3. Halte dich strikt an die Konventionen aus `project-context.mdc`.
+4. Wenn du an einer Stelle blockiert bist oder eine Annahme treffen müsstest: stoppen und nachfragen statt zu raten.
+5. Markiere nach jedem Schritt kurz, was erledigt ist, bevor du zum nächsten übergehst.

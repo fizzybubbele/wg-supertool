@@ -1,0 +1,16 @@
+---
+description: Phase 3 des Build-Loops – Selbst-Review der gerade fertiggestellten Arbeit, behebt Schwachstellen selbst. Aufrufen mit @loop-review nach @loop-work.
+alwaysApply: false
+---
+
+# Loop – Phase 3: Review
+
+Prüfe den zuletzt geschriebenen Code kritisch, bevor du ihn als fertig markierst:
+
+- **Sicherheit:** Ist jede neue Tabelle durch RLS-Policies abgesichert? Kann ein Haushalt auf Daten eines anderen zugreifen?
+- **Fehlerbehandlung:** Was passiert bei fehlendem Netz, leeren Listen, ungültigen Eingaben?
+- **Typen:** Gibt es `any` oder unsichere Casts, die vermeidbar wären?
+- **Tests:** Laufen die Tests, decken sie den Hauptpfad UND mindestens einen Fehlerfall ab?
+- **Konventionen:** Entspricht der Code `project-context.mdc`?
+
+Behebe gefundene Probleme direkt selbst. Fasse danach kurz zusammen, was du geprüft und was du gefixt hast.

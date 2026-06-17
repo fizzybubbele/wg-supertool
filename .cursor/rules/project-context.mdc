@@ -1,0 +1,32 @@
+---
+description: Kernkontext für das WG-SuperTool-Projekt – Tech-Stack, Architektur, Konventionen
+alwaysApply: true
+---
+
+# WG-SuperTool – Projekt-Kontext
+
+## Tech-Stack
+- Frontend: React Native (Expo), TypeScript strict mode, Expo Router, NativeWind
+- Backend: Supabase (Postgres, Auth, Realtime, Storage)
+- KI: Vision-LLM-API für Kassenzettel-Parsing, aufgerufen über Supabase Edge Functions
+- Payments: RevenueCat
+- State: Zustand (Client State), React Query (Server State)
+
+## Architektur-Prinzipien
+- Multi-Tenancy von Anfang an: jede Tabelle hat `household_id`, jede Query läuft über Row-Level-Security
+- Offline-first für die Einkaufsliste
+- Feature-Ordner-Struktur: `/features/<feature-name>/`, nicht nach Dateityp sortiert
+
+## Konventionen
+- Named exports, keine default exports außer bei Expo-Router-Pages
+- async/await statt `.then()`-Chains
+- Funktionen max. ~40 Zeilen, sonst aufteilen
+- Jede neue Tabelle bekommt zuerst eine RLS-Policy, danach erst die Query-Logik
+
+## Vermeiden
+- `any`-Types als Notausgang
+- Business-Logik in UI-Komponenten – gehört in Hooks/Services
+- Neue Abhängigkeiten ohne kurze Begründung im Commit
+
+## Vier Kernbereiche
+Finanzen & Einkäufe, Putzplan, Organisation/Kommunikation, Vorrat. Details siehe `docs/wg-supertool-cursor-prompt.md`.

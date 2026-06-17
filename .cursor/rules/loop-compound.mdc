@@ -1,0 +1,14 @@
+---
+description: Phase 4 des Build-Loops – Learnings aus dieser Session in LEARNINGS.md festhalten, damit der nächste Loop davon profitiert. Aufrufen mit @loop-compound am Ende eines Features.
+alwaysApply: false
+---
+
+# Loop – Phase 4: Compound
+
+Ergänze `LEARNINGS.md` um einen kurzen, neuen Eintrag:
+
+- Was hat gut funktioniert und sollte beim nächsten Mal wiederholt werden?
+- Was hat nicht funktioniert oder zu Umwegen geführt?
+- Gibt es eine neue Konvention, die in `project-context.mdc` aufgenommen werden sollte?
+
+Halte jeden Eintrag auf 3–5 Zeilen, kein Tagebuch. Wenn eine Konvention wirklich projektweit gilt, schlage vor, sie direkt in `project-context.mdc` zu übernehmen statt nur in den Learnings.

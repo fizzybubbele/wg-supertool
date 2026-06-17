@@ -1,0 +1,18 @@
+---
+description: Phase 1 des Build-Loops – Ziel klären und einen konkreten Plan erstellen, bevor Code geschrieben wird. Manuell aufrufen mit @loop-plan, wenn ein neues Feature oder eine neue Aufgabe startet.
+alwaysApply: false
+---
+
+# Loop – Phase 1: Plan
+
+Bevor du irgendetwas baust:
+
+1. Lies `LEARNINGS.md` im Projekt-Root – diese Learnings aus vorherigen Loops gelten weiterhin.
+2. Falls das Ziel unklar oder mehrdeutig ist: stelle gezielte Rückfragen, bevor du planst.
+3. Durchsuche die bestehende Codebase nach ähnlichen Mustern, die du wiederverwenden kannst.
+4. Erstelle einen konkreten Plan mit:
+   - betroffenen Dateien/Ordnern
+   - neuen Tabellen/RLS-Policies, falls nötig
+   - Reihenfolge der Schritte
+   - was explizit NICHT Teil dieses Schritts ist
+5. Schreibe noch KEINEN Code. Warte auf Bestätigung des Plans, bevor du zu `@loop-work` übergehst.
