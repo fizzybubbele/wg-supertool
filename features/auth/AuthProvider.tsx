@@ -12,13 +12,18 @@ import {
 import { hasSupabaseConfig } from '@/lib/env';
 import { getSupabase } from '@/lib/supabase';
 
+type AuthResult = {
+  error: Error | null;
+  session: Session | null;
+};
+
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
   isConfigured: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
@@ -62,14 +67,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await getSupabase().auth.signInWithPassword({ email, password });
-    return { error: error ? new Error(error.message) : null };
+  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
+    return {
+      error: error ? new Error(error.message) : null,
+      session: data.session,
+    };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await getSupabase().auth.signUp({ email, password });
-    return { error: error ? new Error(error.message) : null };
+  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    const { data, error } = await getSupabase().auth.signUp({ email, password });
+    return {
+      error: error ? new Error(error.message) : null,
+      session: data.session,
+    };
   }, []);
 
   const signOut = useCallback(async () => {

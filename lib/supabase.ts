@@ -12,6 +12,27 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
+const WebStorageAdapter = {
+  getItem: (key: string) => {
+    if (typeof window === 'undefined') {
+      return Promise.resolve(null);
+    }
+    return Promise.resolve(window.localStorage.getItem(key));
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(key, value);
+    }
+    return Promise.resolve();
+  },
+  removeItem: (key: string) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(key);
+    }
+    return Promise.resolve();
+  },
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -70,21 +91,110 @@ export type Database = {
           role?: 'owner' | 'member';
         };
       };
+      shopping_list_items: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          checked: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          name: string;
+          checked?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          checked?: boolean;
+        };
+      };
+      pantry_items: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          quantity: number;
+          unit: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          name: string;
+          quantity?: number;
+          unit?: string;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          quantity?: number;
+          unit?: string;
+        };
+      };
+      cleaning_tasks: {
+        Row: {
+          id: string;
+          household_id: string;
+          title: string;
+          done: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          title: string;
+          done?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          done?: boolean;
+          sort_order?: number;
+        };
+      };
+      org_events: {
+        Row: {
+          id: string;
+          household_id: string;
+          title: string;
+          event_date: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          title: string;
+          event_date: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          event_date?: string;
+          description?: string | null;
+        };
+      };
     };
   };
 };
 
-let client: SupabaseClient<Database> | null = null;
+let client: SupabaseClient | null = null;
 
-export function getSupabase() {
+export function getSupabase(): SupabaseClient {
   if (!client) {
     const { url, anonKey } = getSupabaseConfig();
-    client = createClient<Database>(url, anonKey, {
+    client = createClient(url, anonKey, {
       auth: {
-        storage: Platform.OS === 'web' ? undefined : ExpoSecureStoreAdapter,
+        storage: Platform.OS === 'web' ? WebStorageAdapter : ExpoSecureStoreAdapter,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: Platform.OS === 'web',
       },
     });
   }
@@ -93,10 +203,10 @@ export function getSupabase() {
 }
 
 /** @deprecated Prefer getSupabase() for lazy initialization */
-export const supabase = new Proxy({} as SupabaseClient<Database>, {
+export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     const instance = getSupabase();
-    const value = instance[prop as keyof SupabaseClient<Database>];
+    const value = instance[prop as keyof SupabaseClient];
     return typeof value === 'function' ? value.bind(instance) : value;
   },
 });
