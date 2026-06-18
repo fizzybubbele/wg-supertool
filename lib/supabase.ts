@@ -111,6 +111,27 @@ export type Database = {
           checked?: boolean;
         };
       };
+      shopping_list_completions: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          completed_at: string;
+          completed_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          name: string;
+          completed_at?: string;
+          completed_by?: string | null;
+        };
+        Update: {
+          name?: string;
+          completed_at?: string;
+          completed_by?: string | null;
+        };
+      };
       pantry_items: {
         Row: {
           id: string;
@@ -141,6 +162,9 @@ export type Database = {
           title: string;
           done: boolean;
           sort_order: number;
+          assigned_to: string | null;
+          completed_by: string | null;
+          completed_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -149,12 +173,59 @@ export type Database = {
           title: string;
           done?: boolean;
           sort_order?: number;
+          assigned_to?: string | null;
+          completed_by?: string | null;
+          completed_at?: string | null;
           created_at?: string;
         };
         Update: {
           title?: string;
           done?: boolean;
           sort_order?: number;
+          assigned_to?: string | null;
+          completed_by?: string | null;
+          completed_at?: string | null;
+        };
+      };
+      receipts: {
+        Row: {
+          id: string;
+          household_id: string;
+          uploaded_by: string;
+          shopped_by: string | null;
+          storage_path: string;
+          store_name: string | null;
+          purchase_date: string | null;
+          total_amount: number | null;
+          currency: string;
+          status: 'pending' | 'parsed' | 'confirmed' | 'failed';
+          error_message: string | null;
+          created_at: string;
+          confirmed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          uploaded_by: string;
+          shopped_by?: string | null;
+          storage_path: string;
+          store_name?: string | null;
+          purchase_date?: string | null;
+          total_amount?: number | null;
+          currency?: string;
+          status?: 'pending' | 'parsed' | 'confirmed' | 'failed';
+          error_message?: string | null;
+          created_at?: string;
+          confirmed_at?: string | null;
+        };
+        Update: {
+          shopped_by?: string | null;
+          store_name?: string | null;
+          purchase_date?: string | null;
+          total_amount?: number | null;
+          status?: 'pending' | 'parsed' | 'confirmed' | 'failed';
+          error_message?: string | null;
+          confirmed_at?: string | null;
         };
       };
       org_events: {
@@ -163,21 +234,89 @@ export type Database = {
           household_id: string;
           title: string;
           event_date: string;
+          starts_at: string;
+          ends_at: string | null;
+          all_day: boolean;
           description: string | null;
           created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+          external_provider: string | null;
+          external_calendar_id: string | null;
+          external_event_id: string | null;
+          sync_source: string | null;
+          synced_at: string | null;
         };
         Insert: {
           id?: string;
           household_id: string;
           title: string;
           event_date: string;
+          starts_at: string;
+          ends_at?: string | null;
+          all_day?: boolean;
           description?: string | null;
           created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+          external_provider?: string | null;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
+          sync_source?: string | null;
+          synced_at?: string | null;
         };
         Update: {
           title?: string;
           event_date?: string;
+          starts_at?: string;
+          ends_at?: string | null;
+          all_day?: boolean;
           description?: string | null;
+          updated_at?: string;
+          deleted_at?: string | null;
+          external_provider?: string | null;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
+          sync_source?: string | null;
+          synced_at?: string | null;
+        };
+      };
+      calendar_connections_public: {
+        Row: {
+          id: string;
+          user_id: string;
+          household_id: string;
+          provider: string;
+          calendar_id: string;
+          watch_expires_at: string | null;
+          last_synced_at: string | null;
+          sync_error: string | null;
+          created_at: string;
+          updated_at: string;
+          watch_active: boolean;
+        };
+      };
+      push_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          expo_push_token: string;
+          platform: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          expo_push_token: string;
+          platform?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          expo_push_token?: string;
+          platform?: string | null;
+          updated_at?: string;
         };
       };
     };

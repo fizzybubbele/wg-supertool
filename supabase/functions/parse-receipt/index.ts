@@ -117,13 +117,17 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let receiptId: string | undefined;
+  let serviceClient: ReturnType<typeof createClient> | undefined;
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
-    const { receipt_id: receiptId } = await req.json();
+    const body = await req.json();
+    receiptId = body.receipt_id;
     if (!receiptId) {
       return jsonResponse({ error: 'receipt_id fehlt' }, 400);
     }
@@ -131,6 +135,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    serviceClient = supabase;
 
     const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
@@ -207,6 +212,12 @@ Deno.serve(async (req) => {
     return jsonResponse({ success: true, receipt_id: receiptId, parsed });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+    if (receiptId && serviceClient) {
+      await serviceClient
+        .from('receipts')
+        .update({ status: 'failed', error_message: message })
+        .eq('id', receiptId);
+    }
     return jsonResponse({ error: message }, 500);
   }
 });

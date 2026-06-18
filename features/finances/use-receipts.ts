@@ -22,6 +22,11 @@ export function useReceipts() {
 
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['receipts', householdId] });
 
+  const invalidateStats = () => {
+    void queryClient.invalidateQueries({ queryKey: ['purchase-stats', householdId] });
+    void queryClient.invalidateQueries({ queryKey: ['member-activity', householdId] });
+  };
+
   const uploadMutation = useMutation({
     mutationFn: () => uploadAndParseReceipt(householdId!),
     onSuccess: invalidate,
@@ -32,12 +37,17 @@ export function useReceipts() {
       receiptId,
       items,
       meta,
+      shoppedBy,
     }: {
       receiptId: string;
       items: ReceiptItemInput[];
       meta: { store_name: string | null; purchase_date: string | null; total_amount: number | null };
-    }) => confirmReceipt(receiptId, householdId!, items, meta),
-    onSuccess: invalidate,
+      shoppedBy: string;
+    }) => confirmReceipt(receiptId, householdId!, items, meta, shoppedBy),
+    onSuccess: () => {
+      invalidate();
+      invalidateStats();
+    },
   });
 
   const loadReceiptMutation = useMutation({

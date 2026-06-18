@@ -15,7 +15,7 @@ export type AreaResponsibility = {
   display_name: string | null;
 };
 
-async function fetchProfiles(userIds: string[]): Promise<Map<string, string | null>> {
+export async function fetchProfiles(userIds: string[]): Promise<Map<string, string | null>> {
   if (userIds.length === 0) {
     return new Map();
   }

@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
 import { FormInput } from '@/components/FormInput';
+import { X, iconSize } from '@/components/icons';
+import { PressableScale } from '@/components/PressableScale';
+import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { spacing, typography } from '@/constants/tokens';
 import { usePantry } from '@/features/pantry/use-pantry';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function PantryScreen() {
+  const colors = useThemeColors();
   const { items, isLoading, addItem, deleteItem } = usePantry();
   const [newItem, setNewItem] = useState('');
 
@@ -23,7 +24,7 @@ export default function PantryScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <ScreenHeader area="pantry" title="Vorrat" subtitle="Was ist gerade im Haus?" />
 
       <View style={styles.addRow}>
@@ -34,99 +35,74 @@ export default function PantryScreen() {
           onChangeText={setNewItem}
           onSubmitEditing={() => void handleAdd()}
         />
-        <Pressable style={styles.addButton} onPress={() => void handleAdd()}>
-          <Text style={styles.addButtonText}>+</Text>
-        </Pressable>
+        <Button iconName="plus" onPress={() => void handleAdd()} />
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" style={styles.loader} />
+        <ActivityIndicator color={colors.accent} style={styles.loader} />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <Text style={styles.empty}>Noch nichts im Vorrat eingetragen.</Text>
+            <EmptyState message="Der Vorrat ist leer." hint="Trage ein, was gerade im Haus ist." />
           }
           renderItem={({ item }) => (
-            <View style={styles.row}>
+            <View style={[styles.row, { borderBottomColor: colors.borderSubtle }]}>
               <View style={styles.rowMain}>
-                <Text style={styles.rowText}>{item.name}</Text>
-                <Text style={styles.quantity}>
+                <Text style={[styles.rowText, { color: colors.ink }]}>{item.name}</Text>
+                <Text style={[styles.quantity, { color: colors.inkMuted }, typography.tabular]}>
                   {item.quantity} {item.unit}
                 </Text>
               </View>
-              <Pressable onPress={() => void deleteItem.mutateAsync(item.id)}>
-                <Text style={styles.delete}>✕</Text>
-              </Pressable>
+              <PressableScale
+                style={styles.deleteHit}
+                onPress={() => void deleteItem.mutateAsync(item.id)}>
+                <X size={iconSize.rowAction} color={colors.error} strokeWidth={1.75} />
+              </PressableScale>
             </View>
           )}
         />
       )}
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    flex: 1,
-    padding: 16,
-  },
   addRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   addInput: {
     flex: 1,
     marginBottom: 0,
   },
-  addButton: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '600',
-  },
   loader: {
-    marginTop: 24,
-  },
-  empty: {
-    color: '#9ca3af',
-    marginTop: 24,
-    textAlign: 'center',
+    marginTop: spacing.lg,
   },
   row: {
     alignItems: 'center',
-    borderBottomColor: '#f3f4f6',
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: spacing.sm + spacing.xs,
   },
   rowMain: {
     flex: 1,
   },
   rowText: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.bodyMedium,
   },
   quantity: {
-    color: '#6b7280',
+    ...typography.body,
     fontSize: 14,
     marginTop: 2,
   },
-  delete: {
-    color: '#ef4444',
-    fontSize: 18,
-    paddingHorizontal: 8,
+  deleteHit: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
   },
 });

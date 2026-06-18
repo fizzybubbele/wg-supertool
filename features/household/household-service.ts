@@ -97,7 +97,9 @@ export async function createHousehold(name: string): Promise<Household> {
     household_id: household.id,
     title: 'WG-Abend',
     event_date: nextWeek.toISOString().slice(0, 10),
+    starts_at: `${nextWeek.toISOString().slice(0, 10)}T12:00:00.000Z`,
     description: 'Gemeinsames Kochen und Planung',
+    sync_source: 'app',
   });
 
   if (eventError) {

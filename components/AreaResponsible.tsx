@@ -1,19 +1,20 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
+import { memberLabel, MemberPickerDrawer } from '@/components/MemberPickerDrawer';
+import { PressableScale } from '@/components/PressableScale';
+import { radius, spacing, typography } from '@/constants/tokens';
 import { useHouseholds } from '@/features/household/use-household';
 import type { HouseholdArea } from '@/features/responsibilities/areas';
 import { useAreaResponsibilities } from '@/features/responsibilities/use-area-responsibilities';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type AreaResponsibleProps = {
   area: HouseholdArea;
 };
 
-function memberLabel(displayName: string | null, userId: string) {
-  return displayName?.trim() || `Mitglied ${userId.slice(0, 6)}`;
-}
-
 export function AreaResponsible({ area }: AreaResponsibleProps) {
+  const colors = useThemeColors();
   const { activeHousehold } = useHouseholds();
   const { members, getResponsibleForArea, assignResponsible, clearResponsible, isUpdating } =
     useAreaResponsibilities();
@@ -25,62 +26,34 @@ export function AreaResponsible({ area }: AreaResponsibleProps) {
     return null;
   }
 
-  const handleAssign = async (userId: string) => {
-    await assignResponsible({ area, userId });
-    setIsOpen(false);
-  };
-
-  const handleClear = async () => {
-    await clearResponsible(area);
-    setIsOpen(false);
-  };
-
   return (
     <>
-      <Pressable
-        style={styles.chip}
+      <PressableScale
+        style={[
+          styles.chip,
+          { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+        ]}
         disabled={isUpdating}
         onPress={() => setIsOpen(true)}>
-        <Text style={styles.chipLabel}>Zuständig:</Text>
-        <Text style={styles.chipValue}>
+        <Text style={[styles.chipLabel, { color: colors.inkMuted }]}>Zuständig:</Text>
+        <Text style={[styles.chipValue, { color: colors.ink }]}>
           {responsible
             ? memberLabel(responsible.display_name, responsible.user_id)
             : 'Nicht zugewiesen'}
         </Text>
-        <Text style={styles.chipEdit}> ändern</Text>
-      </Pressable>
+        <Text style={[styles.chipEdit, { color: colors.accent }]}> ändern</Text>
+      </PressableScale>
 
-      <Modal animationType="fade" transparent visible={isOpen} onRequestClose={() => setIsOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setIsOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.sheetTitle}>Zuständigkeit wählen</Text>
-            <Text style={styles.sheetSubtitle}>{activeHousehold.name}</Text>
-
-            {members.map((member) => (
-              <Pressable
-                key={member.user_id}
-                style={[
-                  styles.memberRow,
-                  responsible?.user_id === member.user_id && styles.memberRowActive,
-                ]}
-                onPress={() => void handleAssign(member.user_id)}>
-                <Text style={styles.memberName}>{memberLabel(member.display_name, member.user_id)}</Text>
-                {member.role === 'owner' ? <Text style={styles.ownerBadge}>Owner</Text> : null}
-              </Pressable>
-            ))}
-
-            {responsible ? (
-              <Pressable style={styles.clearButton} onPress={() => void handleClear()}>
-                <Text style={styles.clearButtonText}>Zuweisung entfernen</Text>
-              </Pressable>
-            ) : null}
-
-            <Pressable style={styles.cancelButton} onPress={() => setIsOpen(false)}>
-              <Text style={styles.cancelButtonText}>Abbrechen</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <MemberPickerDrawer
+        visible={isOpen}
+        onClose={() => setIsOpen(false)}
+        subtitle={activeHousehold.name}
+        members={members}
+        selectedUserId={responsible?.user_id}
+        isUpdating={isUpdating}
+        onAssign={(userId) => assignResponsible({ area, userId })}
+        onClear={() => clearResponsible(area)}
+      />
     </>
   );
 }
@@ -88,91 +61,24 @@ export function AreaResponsible({ area }: AreaResponsibleProps) {
 const styles = StyleSheet.create({
   chip: {
     alignSelf: 'flex-start',
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
-    borderRadius: 999,
-    borderWidth: 1,
+    borderRadius: radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginBottom: spacing.sm + spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm + spacing.xs,
+    paddingVertical: spacing.sm,
   },
   chipLabel: {
-    color: '#1d4ed8',
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.caption,
   },
   chipValue: {
-    color: '#1e3a8a',
-    fontSize: 13,
-    fontWeight: '700',
+    ...typography.caption,
+    fontWeight: '600',
   },
   chipEdit: {
-    color: '#2563eb',
-    fontSize: 13,
-  },
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  sheet: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-  },
-  sheetTitle: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  sheetSubtitle: {
-    color: '#6b7280',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  memberRow: {
-    alignItems: 'center',
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  memberRowActive: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#2563eb',
-  },
-  memberName: {
-    color: '#111827',
-    fontSize: 16,
-  },
-  ownerBadge: {
-    color: '#6b7280',
-    fontSize: 12,
-  },
-  clearButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-  },
-  clearButtonText: {
-    color: '#dc2626',
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  cancelButton: {
-    marginTop: 4,
-    paddingVertical: 12,
-  },
-  cancelButtonText: {
-    color: '#6b7280',
-    fontSize: 15,
-    textAlign: 'center',
+    ...typography.caption,
+    fontWeight: '400',
   },
 });

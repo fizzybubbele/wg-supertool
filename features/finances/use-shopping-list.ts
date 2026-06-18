@@ -1,24 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import {
+  completeCheckedShoppingItems,
+  fetchShoppingList,
+} from '@/features/finances/shopping-list-service';
 import { useHouseholds } from '@/features/household/use-household';
 import { getSupabase } from '@/lib/supabase';
 
-export type ShoppingListItem = {
-  id: string;
-  name: string;
-  checked: boolean;
-};
-
-async function fetchShoppingList(householdId: string): Promise<ShoppingListItem[]> {
-  const { data, error } = await getSupabase()
-    .from('shopping_list_items')
-    .select('id, name, checked')
-    .eq('household_id', householdId)
-    .order('created_at', { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
+export type { ShoppingListItem } from '@/features/finances/shopping-list-service';
 
 export function useShoppingList() {
   const queryClient = useQueryClient();
@@ -31,8 +20,14 @@ export function useShoppingList() {
     enabled: Boolean(householdId),
   });
 
-  const invalidate = () =>
+  const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['shopping-list', householdId] });
+  };
+
+  const invalidateStats = () => {
+    void queryClient.invalidateQueries({ queryKey: ['purchase-stats', householdId] });
+    void queryClient.invalidateQueries({ queryKey: ['member-activity', householdId] });
+  };
 
   const addItem = useMutation({
     mutationFn: async (name: string) => {
@@ -63,5 +58,24 @@ export function useShoppingList() {
     onSuccess: invalidate,
   });
 
-  return { items: query.data ?? [], isLoading: query.isLoading, addItem, toggleItem, deleteItem };
+  const completeCheckedItems = useMutation({
+    mutationFn: (shoppedBy: string) => completeCheckedShoppingItems(householdId!, shoppedBy),
+    onSuccess: () => {
+      invalidate();
+      invalidateStats();
+    },
+  });
+
+  const items = query.data ?? [];
+  const checkedCount = items.filter((item) => item.checked).length;
+
+  return {
+    items,
+    checkedCount,
+    isLoading: query.isLoading,
+    addItem,
+    toggleItem,
+    deleteItem,
+    completeCheckedItems,
+  };
 }

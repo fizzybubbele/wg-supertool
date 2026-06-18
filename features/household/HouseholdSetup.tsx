@@ -1,29 +1,28 @@
 import { useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { FormInput } from '@/components/FormInput';
+import { Screen } from '@/components/Screen';
+import { spacing, typography } from '@/constants/tokens';
 import { useHouseholds } from '@/features/household/use-household';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type HouseholdSetupProps = {
   children: ReactNode;
 };
 
 export function HouseholdSetup({ children }: HouseholdSetupProps) {
+  const colors = useThemeColors();
   const { activeHousehold, isLoading, createHousehold, isCreating, createError } = useHouseholds();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <Screen style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </Screen>
     );
   }
 
@@ -47,86 +46,59 @@ export function HouseholdSetup({ children }: HouseholdSetupProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Willkommen!</Text>
-      <Text style={styles.subtitle}>
+    <Screen style={styles.container}>
+      <Text style={[styles.title, { color: colors.ink }]}>Willkommen!</Text>
+      <Text style={[styles.subtitle, { color: colors.inkMuted }]}>
         Lege deinen Haushalt an, um Finanzen, Putzplan, Organisation und Vorrat zu nutzen.
       </Text>
 
       {(error || createError) && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>
+        <View style={[styles.errorBox, { backgroundColor: colors.errorSoft, borderColor: colors.border }]}>
+          <Text style={[styles.errorText, { color: colors.error }]}>
             {error ?? (createError instanceof Error ? createError.message : 'Unbekannter Fehler')}
           </Text>
         </View>
       )}
 
       <FormInput placeholder="z.B. WG Sonnenschein" value={name} onChangeText={setName} />
-      <Pressable
-        style={[styles.button, isCreating && styles.buttonDisabled]}
+      <Button
+        label="Haushalt anlegen"
+        fullWidth
+        loading={isCreating}
         disabled={isCreating}
-        onPress={() => void handleCreate()}>
-        {isCreating ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Haushalt anlegen</Text>
-        )}
-      </Pressable>
-    </View>
+        onPress={() => void handleCreate()}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
   },
   centered: {
     alignItems: 'center',
-    backgroundColor: '#fff',
-    flex: 1,
     justifyContent: 'center',
   },
   title: {
-    color: '#111827',
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
+    ...typography.display,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    color: '#6b7280',
-    fontSize: 16,
+    ...typography.body,
     lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   errorBox: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 12,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: spacing.md,
+    padding: spacing.sm + spacing.xs,
   },
   errorText: {
-    color: '#b91c1c',
     textAlign: 'center',
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

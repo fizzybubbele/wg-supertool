@@ -45,9 +45,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true;
     const supabase = getSupabase();
 
-    void supabase.auth.getSession().then(({ data }) => {
+    void supabase.auth.getSession().then(async ({ data }) => {
       if (!isMounted) {
         return;
+      }
+
+      if (data.session) {
+        const { data: userData, error } = await supabase.auth.getUser();
+        if (error || !userData.user) {
+          await supabase.auth.signOut();
+          if (!isMounted) {
+            return;
+          }
+          setSession(null);
+          setIsLoading(false);
+          return;
+        }
       }
 
       setSession(data.session);

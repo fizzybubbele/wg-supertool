@@ -1,9 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AreaResponsible } from '@/components/AreaResponsible';
+import { AreaDot } from '@/components/icons';
+import { spacing, typography } from '@/constants/tokens';
 import { useHouseholds } from '@/features/household/use-household';
 import type { HouseholdArea } from '@/features/responsibilities/areas';
 import { AREA_LABELS } from '@/features/responsibilities/areas';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type ScreenHeaderProps = {
   area: HouseholdArea;
@@ -13,14 +16,20 @@ type ScreenHeaderProps = {
 };
 
 export function ScreenHeader({ area, title, subtitle, showResponsible = true }: ScreenHeaderProps) {
+  const colors = useThemeColors();
   const { activeHousehold } = useHouseholds();
 
   return (
     <View style={styles.container}>
-      {activeHousehold ? <Text style={styles.household}>{activeHousehold.name}</Text> : null}
-      <Text style={styles.areaLabel}>{AREA_LABELS[area]}</Text>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <View style={styles.labelRow}>
+        <AreaDot area={area} />
+        <Text style={[styles.areaLabel, { color: colors.inkMuted }]}>{AREA_LABELS[area]}</Text>
+      </View>
+      {activeHousehold ? (
+        <Text style={[styles.household, { color: colors.inkSubtle }]}>{activeHousehold.name}</Text>
+      ) : null}
+      <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+      {subtitle ? <Text style={[styles.subtitle, { color: colors.inkMuted }]}>{subtitle}</Text> : null}
       {showResponsible ? <AreaResponsible area={area} /> : null}
     </View>
   );
@@ -28,30 +37,27 @@ export function ScreenHeader({ area, title, subtitle, showResponsible = true }: 
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
+  },
+  labelRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+    minHeight: 16,
   },
   household: {
-    color: '#2563eb',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
+    ...typography.caption,
+    marginBottom: spacing.xs,
   },
   areaLabel: {
-    color: '#9ca3af',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-    textTransform: 'uppercase',
+    ...typography.label,
   },
   title: {
-    color: '#111827',
-    fontSize: 22,
-    fontWeight: '700',
+    ...typography.title,
   },
   subtitle: {
-    color: '#6b7280',
-    fontSize: 15,
-    marginTop: 4,
+    ...typography.body,
+    marginTop: spacing.xs,
   },
 });

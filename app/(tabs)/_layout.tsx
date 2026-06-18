@@ -1,18 +1,23 @@
-import { SymbolView } from 'expo-symbols';
+import { TabIcon } from '@/components/icons/TabIcon';
 import { Redirect, Tabs } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { Screen } from '@/components/Screen';
+import { spacing } from '@/constants/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { HouseholdSetup } from '@/features/household/HouseholdSetup';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function TabLayout() {
+  const colors = useThemeColors();
   const { session, isLoading, signOut } = useAuth();
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <Screen style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </Screen>
     );
   }
 
@@ -24,76 +29,50 @@ export default function TabLayout() {
     <HouseholdSetup>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#2563eb',
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.inkSubtle,
+          tabBarStyle: [styles.tabBar, { backgroundColor: colors.surfaceRaised, borderTopColor: colors.border }],
+          headerStyle: { backgroundColor: colors.surfaceRaised },
+          headerTitleStyle: { color: colors.ink, fontWeight: '600' },
+          headerTintColor: colors.ink,
+          animation: 'none',
           headerRight: () => (
-            <Pressable style={styles.signOut} onPress={() => void signOut()}>
-              <Text style={styles.signOutText}>Abmelden</Text>
-            </Pressable>
+            <Button label="Abmelden" variant="ghost" onPress={() => void signOut()} style={styles.signOut} />
           ),
         }}>
         <Tabs.Screen
           name="finances"
           options={{
             title: 'Finanzen',
-            tabBarIcon: ({ color }) => (
-              <SymbolView
-                name={{ ios: 'eurosign.circle', android: 'paid', web: 'paid' }}
-                tintColor={color}
-                size={24}
-              />
-            ),
+            tabBarIcon: ({ color }) => <TabIcon name="coin" color={color} />,
           }}
         />
         <Tabs.Screen
           name="cleaning"
           options={{
             title: 'Putzplan',
-            tabBarIcon: ({ color }) => (
-              <SymbolView
-                name={{ ios: 'sparkles', android: 'cleaning_services', web: 'cleaning_services' }}
-                tintColor={color}
-                size={24}
-              />
-            ),
+            tabBarIcon: ({ color }) => <TabIcon name="sparkle" color={color} />,
           }}
         />
         <Tabs.Screen
           name="org"
           options={{
             title: 'Organisation',
-            tabBarIcon: ({ color }) => (
-              <SymbolView
-                name={{ ios: 'calendar', android: 'event', web: 'event' }}
-                tintColor={color}
-                size={24}
-              />
-            ),
+            tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} />,
           }}
         />
         <Tabs.Screen
           name="responsibilities"
           options={{
             title: 'Zuständig',
-            tabBarIcon: ({ color }) => (
-              <SymbolView
-                name={{ ios: 'person.2', android: 'group', web: 'group' }}
-                tintColor={color}
-                size={24}
-              />
-            ),
+            tabBarIcon: ({ color }) => <TabIcon name="users" color={color} />,
           }}
         />
         <Tabs.Screen
           name="pantry"
           options={{
             title: 'Vorrat',
-            tabBarIcon: ({ color }) => (
-              <SymbolView
-                name={{ ios: 'refrigerator', android: 'kitchen', web: 'kitchen' }}
-                tintColor={color}
-                size={24}
-              />
-            ),
+            tabBarIcon: ({ color }) => <TabIcon name="package" color={color} />,
           }}
         />
       </Tabs>
@@ -104,15 +83,15 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   centered: {
     alignItems: 'center',
-    backgroundColor: '#fff',
-    flex: 1,
     justifyContent: 'center',
   },
-  signOut: {
-    marginRight: 16,
+  tabBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  signOutText: {
-    color: '#2563eb',
-    fontSize: 14,
+  signOut: {
+    marginRight: spacing.md,
+    minHeight: 36,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
   },
 });

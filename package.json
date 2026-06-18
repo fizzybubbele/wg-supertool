@@ -40,7 +40,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "supabase:start": "supabase start",
-    "supabase:reset": "supabase db reset"
+    "supabase:reset": "supabase db reset",
+    "seed:demo": "bash scripts/seed-demo.sh"
   },
   "private": true
 }

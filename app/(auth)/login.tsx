@@ -1,21 +1,27 @@
-import { Redirect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { FormInput } from '@/components/FormInput';
+import { spacing, typography } from '@/constants/tokens';
+import { translateAuthError } from '@/features/auth/auth-errors';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const MIN_PASSWORD_LENGTH = 6;
+const DEMO_EMAIL = 'demo@wg-supertool.de';
+const DEMO_PASSWORD = 'test123456';
 
 export default function LoginScreen() {
-  const { session, isLoading, isConfigured, signIn, signUp } = useAuth();
+  const colors = useThemeColors();
+  const router = useRouter();
+  const { session, isLoading, isConfigured, signIn, signUp, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,8 +32,8 @@ export default function LoginScreen() {
 
   if (!isConfigured) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>
+      <View style={[styles.centered, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.errorText, { color: colors.error }]}>
           Supabase nicht konfiguriert.{'\n\n'}
           1. .env.local anlegen{'\n'}
           2. npx supabase start{'\n'}
@@ -38,7 +44,18 @@ export default function LoginScreen() {
   }
 
   if (!isLoading && session) {
-    return <Redirect href="/(tabs)/finances" />;
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.ink }]}>Bereits angemeldet</Text>
+        <Text style={[styles.subtitle, { color: colors.inkMuted }]}>{session.user.email}</Text>
+        <Text style={[styles.hint, { color: colors.inkSubtle }]}>
+          Du bist schon eingeloggt. Melde dich ab, um ein anderes Konto zu nutzen oder dich neu zu
+          registrieren.
+        </Text>
+        <Button label="Zur App" fullWidth onPress={() => router.replace('/(tabs)/finances')} />
+        <Button label="Abmelden" variant="ghost" fullWidth onPress={() => void signOut()} />
+      </View>
+    );
   }
 
   const handleSubmit = async () => {
@@ -67,12 +84,12 @@ export default function LoginScreen() {
       const { error, session: nextSession } = await action(trimmedEmail, trimmedPassword);
 
       if (error) {
-        setFeedback({ type: 'error', message: error.message });
+        setFeedback({ type: 'error', message: translateAuthError(error.message) });
         return;
       }
 
       if (nextSession) {
-        setFeedback({ type: 'success', message: 'Erfolgreich angemeldet.' });
+        router.replace('/(tabs)/finances');
         return;
       }
 
@@ -86,7 +103,7 @@ export default function LoginScreen() {
     } catch (cause) {
       const message =
         cause instanceof Error
-          ? cause.message
+          ? translateAuthError(cause.message)
           : 'Verbindung zu Supabase fehlgeschlagen. Läuft Docker und `npx supabase start`?';
       setFeedback({ type: 'error', message });
     } finally {
@@ -100,9 +117,9 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>WG-SuperTool</Text>
-      <Text style={styles.subtitle}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.title, { color: colors.ink }]}>WG-SuperTool</Text>
+      <Text style={[styles.subtitle, { color: colors.inkMuted }]}>
         {mode === 'signIn' ? 'Bei deinem Haushalt anmelden' : 'Neues Konto erstellen'}
       </Text>
 
@@ -110,12 +127,14 @@ export default function LoginScreen() {
         <View
           style={[
             styles.feedbackBox,
-            feedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess,
+            feedback.type === 'error'
+              ? { backgroundColor: colors.errorSoft, borderColor: '#FECACA' }
+              : { backgroundColor: colors.successSoft, borderColor: '#BBF7D0' },
           ]}>
           <Text
             style={[
               styles.feedbackText,
-              feedback.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess,
+              { color: feedback.type === 'error' ? colors.error : colors.success },
             ]}>
             {feedback.message}
           </Text>
@@ -138,128 +157,125 @@ export default function LoginScreen() {
       <FormInput
         autoCapitalize="none"
         autoComplete={mode === 'signUp' ? 'new-password' : 'password'}
+        enterKeyHint="done"
         placeholder="Passwort"
+        returnKeyType="done"
         secureTextEntry
         textContentType={mode === 'signUp' ? 'newPassword' : 'password'}
         value={password}
         onChangeText={setPassword}
+        onSubmitEditing={() => void handleSubmit()}
         {...(Platform.OS === 'web' ? { autoCorrect: false, spellCheck: false } : {})}
       />
 
       {mode === 'signUp' ? (
-        <Text style={styles.hint}>Mindestens {MIN_PASSWORD_LENGTH} Zeichen</Text>
+        <Text style={[styles.hint, { color: colors.inkSubtle }]}>
+          Mindestens {MIN_PASSWORD_LENGTH} Zeichen
+        </Text>
       ) : null}
 
-      <Pressable
-        style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
+      <Button
+        label={mode === 'signIn' ? 'Anmelden' : 'Registrieren'}
+        fullWidth
+        loading={isSubmitting}
         disabled={isSubmitting}
-        onPress={() => void handleSubmit()}>
-        {isSubmitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.primaryButtonText}>
-            {mode === 'signIn' ? 'Anmelden' : 'Registrieren'}
-          </Text>
-        )}
-      </Pressable>
+        onPress={() => void handleSubmit()}
+      />
 
-      <Pressable style={styles.linkButton} onPress={switchMode}>
-        <Text style={styles.linkText}>
-          {mode === 'signIn'
-            ? 'Noch kein Konto? Registrieren'
-            : 'Bereits registriert? Anmelden'}
-        </Text>
-      </Pressable>
+      <Button
+        label={mode === 'signIn' ? 'Noch kein Konto? Registrieren' : 'Bereits registriert? Anmelden'}
+        variant="ghost"
+        fullWidth
+        onPress={switchMode}
+      />
+
+      {__DEV__ ? (
+        <Button
+          label={`Demo-Login: ${DEMO_EMAIL}`}
+          variant="secondary"
+          fullWidth
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          onPress={() => {
+            setFeedback(null);
+            setMode('signIn');
+            setEmail(DEMO_EMAIL);
+            setPassword(DEMO_PASSWORD);
+            void (async () => {
+              setIsSubmitting(true);
+              try {
+                const { error, session: nextSession } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
+                if (error) {
+                  setFeedback({ type: 'error', message: translateAuthError(error.message) });
+                  return;
+                }
+                if (nextSession) {
+                  router.replace('/(tabs)/finances');
+                }
+              } catch (cause) {
+                const message =
+                  cause instanceof Error
+                    ? translateAuthError(cause.message)
+                    : 'Verbindung zu Supabase fehlgeschlagen. Läuft Docker und `npx supabase start`?';
+                setFeedback({ type: 'error', message });
+              } finally {
+                setIsSubmitting(false);
+              }
+            })();
+          }}
+          style={styles.demoButton}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
   },
   centered: {
     alignItems: 'center',
-    backgroundColor: '#fff',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    color: '#111827',
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
+    ...typography.display,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    color: '#6b7280',
-    fontSize: 16,
-    marginBottom: 24,
+    ...typography.body,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   hint: {
-    color: '#9ca3af',
+    ...typography.body,
     fontSize: 14,
-    marginBottom: 16,
-    marginTop: -8,
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
+    textAlign: 'center',
   },
   feedbackBox: {
     borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  feedbackError: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
     borderWidth: 1,
-  },
-  feedbackSuccess: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#bbf7d0',
-    borderWidth: 1,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + spacing.xs,
   },
   feedbackText: {
     fontSize: 14,
     textAlign: 'center',
   },
-  feedbackTextError: {
-    color: '#b91c1c',
-  },
-  feedbackTextSuccess: {
-    color: '#15803d',
-  },
   errorText: {
-    color: '#b91c1c',
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
   },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingVertical: 16,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.7,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkButton: {
-    paddingVertical: 8,
-  },
-  linkText: {
-    color: '#2563eb',
-    fontSize: 16,
-    textAlign: 'center',
+  demoButton: {
+    marginTop: spacing.lg,
   },
 });

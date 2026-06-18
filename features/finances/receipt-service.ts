@@ -1,8 +1,16 @@
-import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
+import { fetchProfiles } from '@/features/responsibilities/responsibility-service';
 import { getSupabase } from '@/lib/supabase';
+
+function randomId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
 
 export type ReceiptStatus = 'pending' | 'parsed' | 'confirmed' | 'failed';
 
@@ -16,6 +24,8 @@ export type Receipt = {
   currency: string;
   status: ReceiptStatus;
   error_message: string | null;
+  shopped_by: string | null;
+  shopper_name: string | null;
   created_at: string;
   confirmed_at: string | null;
 };
@@ -57,20 +67,30 @@ export async function fetchReceipts(householdId: string): Promise<Receipt[]> {
   const { data, error } = await getSupabase()
     .from('receipts')
     .select(
-      'id, household_id, storage_path, store_name, purchase_date, total_amount, currency, status, error_message, created_at, confirmed_at',
+      'id, household_id, storage_path, store_name, purchase_date, total_amount, currency, status, error_message, shopped_by, created_at, confirmed_at',
     )
     .eq('household_id', householdId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as Receipt[];
+
+  const rows = data ?? [];
+  const shopperIds = rows
+    .map((row) => row.shopped_by as string | null)
+    .filter((id): id is string => Boolean(id));
+  const profiles = await fetchProfiles(shopperIds);
+
+  return rows.map((row) => ({
+    ...(row as Omit<Receipt, 'shopper_name'>),
+    shopper_name: row.shopped_by ? (profiles.get(row.shopped_by as string) ?? null) : null,
+  }));
 }
 
 export async function fetchReceiptWithItems(receiptId: string): Promise<ReceiptWithItems> {
   const { data: receipt, error: receiptError } = await getSupabase()
     .from('receipts')
     .select(
-      'id, household_id, storage_path, store_name, purchase_date, total_amount, currency, status, error_message, created_at, confirmed_at',
+      'id, household_id, storage_path, store_name, purchase_date, total_amount, currency, status, error_message, shopped_by, created_at, confirmed_at',
     )
     .eq('id', receiptId)
     .single();
@@ -78,6 +98,10 @@ export async function fetchReceiptWithItems(receiptId: string): Promise<ReceiptW
   if (receiptError || !receipt) {
     throw new Error(receiptError?.message ?? 'Kassenzettel nicht gefunden');
   }
+
+  const shopperProfiles = receipt.shopped_by
+    ? await fetchProfiles([receipt.shopped_by as string])
+    : new Map<string, string | null>();
 
   const { data: items, error: itemsError } = await getSupabase()
     .from('receipt_items')
@@ -88,7 +112,10 @@ export async function fetchReceiptWithItems(receiptId: string): Promise<ReceiptW
   if (itemsError) throw new Error(itemsError.message);
 
   return {
-    ...(receipt as Receipt),
+    ...(receipt as Omit<Receipt, 'shopper_name'>),
+    shopper_name: receipt.shopped_by
+      ? (shopperProfiles.get(receipt.shopped_by as string) ?? null)
+      : null,
     items: (items ?? []) as ReceiptItem[],
   };
 }
@@ -129,7 +156,7 @@ export async function uploadAndParseReceipt(householdId: string): Promise<Receip
   }
 
   const ext = extensionFromUri(asset.uri);
-  const fileId = Crypto.randomUUID();
+  const fileId = randomId();
   const storagePath = `${householdId}/${fileId}.${ext}`;
   const arrayBuffer = await uriToArrayBuffer(asset.uri);
 
@@ -194,7 +221,28 @@ export async function confirmReceipt(
   householdId: string,
   items: ReceiptItemInput[],
   meta: { store_name: string | null; purchase_date: string | null; total_amount: number | null },
+  shoppedBy: string,
 ): Promise<void> {
+  const keptIds = new Set(items.map((item) => item.id).filter(Boolean) as string[]);
+  const { data: existingItems, error: existingError } = await getSupabase()
+    .from('receipt_items')
+    .select('id')
+    .eq('receipt_id', receiptId);
+
+  if (existingError) throw new Error(existingError.message);
+
+  const toDelete = (existingItems ?? [])
+    .map((item) => item.id as string)
+    .filter((id) => !keptIds.has(id));
+
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await getSupabase()
+      .from('receipt_items')
+      .delete()
+      .in('id', toDelete);
+    if (deleteError) throw new Error(deleteError.message);
+  }
+
   for (const [index, item] of items.entries()) {
     if (item.id) {
       const { error } = await getSupabase()
@@ -228,6 +276,7 @@ export async function confirmReceipt(
       store_name: meta.store_name,
       purchase_date: meta.purchase_date,
       total_amount: meta.total_amount,
+      shopped_by: shoppedBy,
       status: 'confirmed',
       confirmed_at: new Date().toISOString(),
     })

@@ -1,40 +1,41 @@
 import { Link, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Screen } from '@/components/Screen';
+import { spacing, typography } from '@/constants/tokens';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function NotFoundScreen() {
+  const colors = useThemeColors();
+
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn't exist.</Text>
-
+      <Stack.Screen options={{ title: 'Nicht gefunden' }} />
+      <Screen style={styles.container}>
+        <Text style={[styles.title, { color: colors.ink }]}>Diese Seite existiert nicht.</Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
+          <Text style={[styles.linkText, { color: colors.accent }]}>Zur Startseite</Text>
         </Link>
-      </View>
+      </Screen>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
   title: {
+    ...typography.title,
     fontSize: 20,
-    fontWeight: 'bold',
   },
   link: {
-    marginTop: 15,
-    paddingVertical: 15,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
   linkText: {
+    ...typography.body,
     fontSize: 14,
-    color: '#2e78b7',
   },
 });

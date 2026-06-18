@@ -1,24 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import {
+  assignCleaningTask,
+  clearCleaningTaskAssignee,
+  createCleaningTask,
+  deleteCleaningTask,
+  fetchCleaningTasks,
+  toggleCleaningTask,
+  type CleaningTask,
+} from '@/features/cleaning/cleaning-service';
 import { useHouseholds } from '@/features/household/use-household';
-import { getSupabase } from '@/lib/supabase';
 
-export type CleaningTask = {
-  id: string;
-  title: string;
-  done: boolean;
-};
-
-async function fetchCleaningTasks(householdId: string): Promise<CleaningTask[]> {
-  const { data, error } = await getSupabase()
-    .from('cleaning_tasks')
-    .select('id, title, done')
-    .eq('household_id', householdId)
-    .order('sort_order', { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
+export type { CleaningTask };
 
 export function useCleaningTasks() {
   const queryClient = useQueryClient();
@@ -31,13 +24,44 @@ export function useCleaningTasks() {
     enabled: Boolean(householdId),
   });
 
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['cleaning', householdId] });
+    void queryClient.invalidateQueries({ queryKey: ['member-activity', householdId] });
+  };
+
   const toggleTask = useMutation({
-    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
-      const { error } = await getSupabase().from('cleaning_tasks').update({ done }).eq('id', id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['cleaning', householdId] }),
+    mutationFn: ({ id, done }: { id: string; done: boolean }) => toggleCleaningTask(id, done),
+    onSuccess: invalidate,
   });
 
-  return { tasks: query.data ?? [], isLoading: query.isLoading, toggleTask };
+  const assignTask = useMutation({
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      assignCleaningTask(id, userId),
+    onSuccess: invalidate,
+  });
+
+  const clearAssignee = useMutation({
+    mutationFn: (id: string) => clearCleaningTaskAssignee(id),
+    onSuccess: invalidate,
+  });
+
+  const addTask = useMutation({
+    mutationFn: (title: string) => createCleaningTask(householdId!, title),
+    onSuccess: invalidate,
+  });
+
+  const deleteTask = useMutation({
+    mutationFn: (id: string) => deleteCleaningTask(id),
+    onSuccess: invalidate,
+  });
+
+  return {
+    tasks: query.data ?? [],
+    isLoading: query.isLoading,
+    toggleTask,
+    assignTask,
+    clearAssignee,
+    addTask,
+    deleteTask,
+  };
 }
